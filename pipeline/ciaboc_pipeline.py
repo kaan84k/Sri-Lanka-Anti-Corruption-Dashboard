@@ -5,7 +5,7 @@ PDF (court cause list) -> Gemini (structured JSON) -> Pydantic validation -> SQL
 
 Usage:
     export GEMINI_API_KEY="your-key-here"
-    python pipeline/ciaboc_pipeline.py data/raw/20260112_-_20260116.pdf
+    python ciaboc_pipeline.py path/to/20260112_-_20260116.pdf
 
 Requirements:
     pip install google-genai pydantic
@@ -15,6 +15,7 @@ import os
 import re
 import sys
 import json
+import time
 import sqlite3
 import hashlib
 from datetime import datetime
@@ -23,6 +24,7 @@ from typing import Optional
 from pydantic import BaseModel, Field, field_validator
 from google import genai
 from google.genai import types
+from google.genai import errors as genai_errors
 
 # Paths resolve relative to the project root (parent of pipeline/), so the
 # script works no matter which directory you run it from.
@@ -32,7 +34,10 @@ DATA_PROCESSED = os.path.join(PROJECT_ROOT, "data", "processed")
 REVIEW_DIR = os.path.join(DATA_PROCESSED, "review")
 DB_PATH = os.path.join(DATA_PROCESSED, "ciaboc.db")
 
-MODEL = "gemini-2.5-flash"  # cheap + good at document extraction; use gemini-2.5-pro if quality issues
+MODEL = "gemini-2.5-flash"  # primary model
+# Tried in order if the previous one is overloaded (503) or rate-limited (429):
+FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+MAX_RETRIES_PER_MODEL = 4   # with exponential backoff: waits 5s, 10s, 20s, 40s
 
 
 # ---------------------------------------------------------------------------
@@ -116,29 +121,54 @@ Return every case. Do not skip any rows."""
 
 
 def extract_with_gemini(pdf_path: str, api_key: str) -> ExtractionResult:
-    """Send the PDF to Gemini and get back schema-enforced JSON."""
+    """Send the PDF to Gemini and get back schema-enforced JSON.
+
+    Handles temporary server overload (503) and rate limits (429):
+    retries each model with exponential backoff, then falls back to
+    the next model in FALLBACK_MODELS.
+    """
     client = genai.Client(api_key=api_key)
 
     with open(pdf_path, "rb") as f:
         pdf_bytes = f.read()
 
-    response = client.models.generate_content(
-        model=MODEL,
-        contents=[
-            types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
-            EXTRACTION_PROMPT,
-        ],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=ExtractionResult,   # Gemini enforces this schema
-            temperature=0.0,                    # deterministic: we want facts, not creativity
-        ),
+    contents = [
+        types.Part.from_bytes(data=pdf_bytes, mime_type="application/pdf"),
+        EXTRACTION_PROMPT,
+    ]
+    config = types.GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=ExtractionResult,   # Gemini enforces this schema
+        temperature=0.0,                    # deterministic: we want facts, not creativity
     )
 
-    # response.parsed gives us a ready Pydantic object; fall back to manual parse
-    if response.parsed is not None:
-        return response.parsed
-    return ExtractionResult.model_validate_json(response.text)
+    last_error = None
+    for model in FALLBACK_MODELS:
+        for attempt in range(1, MAX_RETRIES_PER_MODEL + 1):
+            try:
+                response = client.models.generate_content(
+                    model=model, contents=contents, config=config
+                )
+                if model != FALLBACK_MODELS[0]:
+                    print(f"      (note: used fallback model {model})")
+                if response.parsed is not None:
+                    return response.parsed
+                return ExtractionResult.model_validate_json(response.text)
+
+            except genai_errors.APIError as e:
+                last_error = e
+                # 503 = overloaded, 429 = rate limited -> both are temporary
+                if e.code in (503, 429):
+                    if attempt < MAX_RETRIES_PER_MODEL:
+                        wait = 5 * (2 ** (attempt - 1))     # 5, 10, 20, 40 seconds
+                        print(f"      {model} busy ({e.code}), retry {attempt}/{MAX_RETRIES_PER_MODEL - 1} in {wait}s ...")
+                        time.sleep(wait)
+                    else:
+                        print(f"      {model} still busy after {MAX_RETRIES_PER_MODEL} tries, trying next model ...")
+                else:
+                    raise  # real errors (bad API key, invalid request) should fail loudly
+
+    sys.exit(f"ERROR: all models busy after retries. Try again in a few minutes.\nLast error: {last_error}")
 
 
 # ---------------------------------------------------------------------------
