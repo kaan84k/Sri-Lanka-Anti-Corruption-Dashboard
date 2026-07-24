@@ -15,7 +15,7 @@ from urllib.request import Request, urlopen
 BASE_URL = "https://ciaboc.gov.lk/images/courts"
 DEFAULT_START = date(2026, 1, 12)
 DEFAULT_END = date(2026, 7, 17)
-DEFAULT_OUTPUT = Path(__file__).resolve().parent.parent / "docs"
+DEFAULT_OUTPUT = Path(__file__).resolve().parent.parent / "data" / "raw"
 
 
 class ServiceUnavailableError(Exception):
@@ -122,9 +122,7 @@ def download_week(
 ) -> tuple[Path | None, str | None]:
     """Find and download one weekly PDF."""
     friday = monday + timedelta(days=4)
-    output_file = output_dir / (
-        f"CIABOC_{monday:%Y%m%d}_{friday:%Y%m%d}.pdf"
-    )
+    output_file = output_dir / f"{monday:%Y%m%d}_-_{friday:%Y%m%d}.pdf"
 
     if output_file.exists() and output_file.read_bytes()[:5] == b"%PDF-":
         print(f"[SKIP] {monday} to {friday}: already downloaded")
@@ -175,7 +173,7 @@ def main() -> int:
         "--output",
         type=Path,
         default=DEFAULT_OUTPUT,
-        help="Download directory (default: project docs folder)",
+        help="Download directory (default: project data/raw folder)",
     )
     parser.add_argument(
         "--timeout",
