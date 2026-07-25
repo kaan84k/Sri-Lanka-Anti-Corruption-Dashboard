@@ -26,6 +26,11 @@ from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
 
+try:
+    from .identity_resolution import initialize_identity_schema, resolve_person_id
+except ImportError:
+    from identity_resolution import initialize_identity_schema, resolve_person_id
+
 # Paths resolve relative to the project root (parent of pipeline/), so the
 # script works no matter which directory you run it from.
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -296,6 +301,7 @@ def save_to_sqlite(cases: list[Case], pdf_name: str, db_path: str = DB_PATH) -> 
     """Insert cases. Re-running on the same PDF won't create duplicates."""
     conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA)
+    initialize_identity_schema(conn)
     inserted = skipped = 0
     now = datetime.now().isoformat(timespec="seconds")
 
@@ -316,9 +322,21 @@ def save_to_sqlite(cases: list[Case], pdf_name: str, db_path: str = DB_PATH) -> 
                 "INSERT OR IGNORE INTO file_numbers (case_id, file_no) VALUES (?, ?)",
                 [(case_id, f) for f in case.file_nos],
             )
+            suspect_rows = [
+                (
+                    case_id,
+                    s.name,
+                    s.designation,
+                    s.institution,
+                    resolve_person_id(conn, s.name),
+                )
+                for s in case.suspects
+            ]
             conn.executemany(
-                "INSERT INTO suspects (case_id, name, designation, institution) VALUES (?, ?, ?, ?)",
-                [(case_id, s.name, s.designation, s.institution) for s in case.suspects],
+                """INSERT INTO suspects
+                       (case_id, name, designation, institution, person_id)
+                   VALUES (?, ?, ?, ?, ?)""",
+                suspect_rows,
             )
         conn.commit()
     finally:

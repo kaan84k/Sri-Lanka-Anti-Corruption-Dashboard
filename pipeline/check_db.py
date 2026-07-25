@@ -1,4 +1,4 @@
-"""
+r"""
 Quick sanity checks for the CIABOC database.
 Run from project root:  py -3 pipeline\check_db.py
 """
@@ -29,9 +29,16 @@ if not rows:
 
 print("\n=== Suspects appearing on multiple dates ===")
 for name, n in conn.execute("""
-    SELECT s.name, COUNT(DISTINCT c.hearing_date) AS days
-    FROM suspects s JOIN cases c ON s.case_id = c.id
-    GROUP BY s.name HAVING days > 1
+    SELECT COALESCE(p.canonical_name, s.name),
+           COUNT(DISTINCT c.hearing_date) AS days
+    FROM suspects s
+    LEFT JOIN people p ON p.id = s.person_id
+    JOIN cases c ON s.case_id = c.id
+    GROUP BY CASE
+        WHEN s.person_id IS NOT NULL THEN 'person:' || s.person_id
+        ELSE 'name:' || LOWER(s.name)
+    END
+    HAVING days > 1
     ORDER BY days DESC LIMIT 10
 """):
     print(f"  {name}: appears on {n} dates")
