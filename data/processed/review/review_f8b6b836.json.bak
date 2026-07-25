@@ -1,0 +1,33 @@
+[
+  {
+    "case": {
+      "hearing_date": "2026-01-19",
+      "file_nos": [],
+      "case_no": "CA/HCC/103/2024",
+      "court_level": "CA/SC",
+      "suspects": []
+    },
+    "problems": [
+      "file_nos: Value error, no file numbers found",
+      "suspects: Value error, case has no suspects"
+    ],
+    "source_pdf": "20260119_-_20260123.pdf"
+  },
+  {
+    "case": {
+      "hearing_date": "2026-01-20",
+      "file_nos": [
+        "HC/TAB/02/2025",
+        "HC/TAB/03/2025"
+      ],
+      "case_no": null,
+      "court_level": null,
+      "suspects": []
+    },
+    "problems": [
+      "case_no: Input should be a valid string",
+      "suspects: Value error, case has no suspects"
+    ],
+    "source_pdf": "20260119_-_20260123.pdf"
+  }
+]

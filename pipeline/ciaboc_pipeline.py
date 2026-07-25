@@ -27,6 +27,11 @@ from google.genai import types
 from google.genai import errors as genai_errors
 
 try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None  # court-level resolution degrades gracefully if missing
+
+try:
     from .identity_resolution import initialize_identity_schema, resolve_person_id
 except ImportError:
     from identity_resolution import initialize_identity_schema, resolve_person_id
@@ -203,6 +208,105 @@ def extract_with_gemini(pdf_path: str, api_key: str) -> ExtractionResult:
 
 
 # ---------------------------------------------------------------------------
+# 2b. Court-level resolution from PDF geometry (ground truth the LLM can't see)
+# ---------------------------------------------------------------------------
+# The cause-list table marks the applicable court with a single "*" in one of
+# three adjacent columns (MC | HC | C.A/S.C). When the PDF text is flattened for
+# the LLM, the column the asterisk sits in is lost, so the model guesses — and
+# tends to default everything to MC. We instead read the asterisk's X coordinate
+# and map it to the nearest court-column header, which is deterministic.
+
+_COURT_HEADERS = {"MC": "MC", "HC": "HC", "C.A": "CA/SC"}
+_COURT_NA = "N/A"          # row present in the PDF but its court column is blank
+_CASE_COL_X = (150, 235)   # x-range of the CASE NO. column
+_ROW_TOL = 8               # vertical px tolerance pairing an asterisk with a case row
+_DATE_RE = re.compile(r"^\d{1,2}/\d{1,2}/\d{4}$")
+
+
+def _norm_case_no(case_no: Optional[str]) -> str:
+    """Match key for a case number: primary number, no bracketed alias, no spaces."""
+    if not case_no:
+        return ""
+    return re.split(r"\s*\(", case_no.strip())[0].replace(" ", "").upper()
+
+
+def resolve_court_levels(pdf_path: str) -> dict[str, str]:
+    """Map {normalized_case_no: court_level} by asterisk column position.
+
+    Returns {} if pdfplumber is unavailable so the caller can fall back cleanly.
+    """
+    if pdfplumber is None:
+        print("      (pdfplumber not installed — skipping court-level correction)")
+        return {}
+
+    out: dict[str, str] = {}
+    with pdfplumber.open(pdf_path) as pdf:
+        for page in pdf.pages:
+            words = page.extract_words()
+            cols = {
+                w["text"]: (w["x0"] + w["x1"]) / 2
+                for w in words
+                if w["text"] in _COURT_HEADERS and w["top"] < 120
+            }
+            if not cols:
+                continue
+            # Case numbers can be split across several tokens on the same line
+            # (e.g. "441/2025" -> "4" + "41/2025"). Group case-column tokens by
+            # their vertical position and concatenate them left-to-right so the
+            # whole number reassembles before matching.
+            grouped: dict[int, list] = {}
+            for w in words:
+                if (
+                    _CASE_COL_X[0] < w["x0"] < _CASE_COL_X[1]
+                    and re.search(r"\d", w["text"])
+                    and not _DATE_RE.match(w["text"])
+                ):
+                    grouped.setdefault(round(w["top"]), []).append((w["x0"], w["text"]))
+            rows = [
+                ("".join(t for _, t in sorted(frags)), top)
+                for top, frags in grouped.items()
+            ]
+            starred = set()
+            for w in words:
+                if w["text"] != "*":
+                    continue
+                cx = (w["x0"] + w["x1"]) / 2
+                court = _COURT_HEADERS[min(cols, key=lambda k: abs(cols[k] - cx))]
+                near = min(rows, key=lambda r: abs(r[1] - w["top"]), default=None)
+                if near and abs(near[1] - w["top"]) <= _ROW_TOL:
+                    key = _norm_case_no(near[0])
+                    out[key] = court
+                    starred.add(round(near[1]))
+            # Rows we located but that carry no asterisk have a blank court
+            # column in the source document -> record as 'N/A' (marked-absent),
+            # kept distinct from cases we couldn't locate at all (left unset).
+            for text, top in rows:
+                key = _norm_case_no(text)
+                if key and round(top) not in starred and key not in out:
+                    out[key] = _COURT_NA
+    return out
+
+
+def apply_court_levels(result: "ExtractionResult", pdf_path: str) -> int:
+    """Overwrite each case's court_level with the geometry-derived value.
+
+    Coordinates are authoritative: where an asterisk column is found we use it;
+    where none is found we set None (Unknown) rather than trust the LLM's guess.
+    Returns the number of cases whose court_level changed.
+    """
+    court_by_case = resolve_court_levels(pdf_path)
+    if not court_by_case:
+        return 0
+    changed = 0
+    for case in result.cases:
+        resolved = court_by_case.get(_norm_case_no(case.case_no))
+        if resolved != case.court_level:
+            case.court_level = resolved
+            changed += 1
+    return changed
+
+
+# ---------------------------------------------------------------------------
 # 3. Post-extraction validation (things Pydantic alone can't check)
 # ---------------------------------------------------------------------------
 
@@ -362,6 +466,10 @@ def run(pdf_path: str):
     print(f"[1/4] Sending {pdf_name} to Gemini ({MODEL}) ...")
     result = extract_with_gemini(pdf_path, api_key)
     print(f"      Gemini returned {len(result.cases)} cases")
+
+    print("[1b] Resolving court levels from PDF geometry ...")
+    changed = apply_court_levels(result, pdf_path)
+    print(f"      Corrected court_level on {changed} case(s) via asterisk position")
 
     print("[2/4] Validating ...")
     good, rejected = validate_cases(result, pdf_name)

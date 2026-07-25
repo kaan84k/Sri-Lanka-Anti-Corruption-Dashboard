@@ -138,6 +138,7 @@ def list_cases(
     case_no: Optional[str] = Query(None, description="Exact case number, e.g. 425/2025"),
     court_level: Optional[str] = Query(None, description="MC, HC, or CA/SC"),
     institution: Optional[str] = Query(None, description="Exact institution — cases with a suspect there"),
+    suspect: Optional[str] = Query(None, description="Name fragment — cases with a matching suspect"),
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
 ):
@@ -154,6 +155,15 @@ def list_cases(
     if institution:
         where.append("id IN (SELECT case_id FROM suspects WHERE institution = ?)")
         params.append(institution)
+    if suspect:
+        where.append(
+            """id IN (
+                SELECT s.case_id FROM suspects s
+                LEFT JOIN people p ON p.id = s.person_id
+                WHERE s.name LIKE ? OR p.canonical_name LIKE ?
+            )"""
+        )
+        params.extend([f"%{suspect}%", f"%{suspect}%"])
     where_sql = ("WHERE " + " AND ".join(where)) if where else ""
 
     with get_db() as conn:

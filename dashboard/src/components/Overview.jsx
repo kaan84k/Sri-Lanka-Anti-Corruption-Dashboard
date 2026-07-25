@@ -4,7 +4,7 @@ import {
   AreaChart, Area, PieChart, Pie, Cell, Legend, LabelList,
 } from 'recharts'
 import { api } from '../api.js'
-import { formatDate, weekday } from '../App.jsx'
+import { formatDate, weekday, fmt } from '../App.jsx'
 import {
   courtColor, SERIES, SERIES_SOFT, axisTick, axisTickSm, gridStroke, axisLine,
   tooltipStyle, tooltipLabelStyle, tooltipItemStyle,
@@ -81,7 +81,7 @@ export default function Overview({ onSelectDate, onDrill }) {
         <div className="chart-head">
           <span className="chart-title">Hearings over time</span>
           <span className="chart-sub">
-            {timeline.length} hearing dates · {totalTimeline(timeline)} hearings
+            {timeline.length} hearing dates · {fmt(totalTimeline(timeline))} hearings
           </span>
         </div>
         {!summary ? (
@@ -315,7 +315,7 @@ const totalTimeline = (t) => t.reduce((a, d) => a + d.hearings, 0)
 function StatCard({ num, label }) {
   return (
     <div className="card stat-card">
-      <div className="num">{num}</div>
+      <div className="num">{fmt(num)}</div>
       <div className="label">{label}</div>
     </div>
   )
