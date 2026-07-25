@@ -4,7 +4,7 @@ import { CourtBadge, formatDate } from '../App.jsx'
 
 const PAGE_SIZE = 25
 
-const EMPTY = { date_from: '', date_to: '', court_level: '', case_no: '', institution: '' }
+const EMPTY = { date_from: '', date_to: '', court_level: '', case_no: '', institution: '', suspect: '' }
 
 export default function CasesTable({ initialFilter, onConsumedFilter }) {
   const [filters, setFilters] = useState({ ...EMPTY, ...initialFilter })
@@ -60,6 +60,7 @@ export default function CasesTable({ initialFilter, onConsumedFilter }) {
               <option value="MC">Magistrate's Court (MC)</option>
               <option value="HC">High Court (HC)</option>
               <option value="CA/SC">Appeal / Supreme (CA/SC)</option>
+              <option value="N/A">Court not marked (N/A)</option>
             </select>
           </div>
           <div>
@@ -67,6 +68,13 @@ export default function CasesTable({ initialFilter, onConsumedFilter }) {
             <input
               id="f-case" type="text" placeholder="e.g. 425/2025"
               value={filters.case_no} onChange={update('case_no')}
+            />
+          </div>
+          <div>
+            <label htmlFor="f-suspect">Suspect name</label>
+            <input
+              id="f-suspect" type="text" placeholder="e.g. Rambukwella"
+              value={filters.suspect} onChange={update('suspect')}
             />
           </div>
           <button className="btn ghost" onClick={clear}>Clear filters</button>

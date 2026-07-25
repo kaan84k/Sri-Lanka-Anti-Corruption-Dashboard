@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Overview from './components/Overview.jsx'
 import CasesTable from './components/CasesTable.jsx'
 import SuspectSearch from './components/SuspectSearch.jsx'
+import { api } from './api.js'
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
@@ -11,9 +12,14 @@ const TABS = [
 
 export default function App() {
   const [tab, setTab] = useState('overview')
+  const [meta, setMeta] = useState(null) // header stats: totals + date range
   // When something on Overview is clicked, jump to Cases pre-filtered.
   // Filter is a partial of { date_from, date_to, court_level, institution }.
   const [caseFilter, setCaseFilter] = useState(null)
+
+  useEffect(() => {
+    api.summary().then(setMeta).catch(() => {})
+  }, [])
 
   const openCases = (filter) => {
     setCaseFilter(filter)
@@ -25,25 +31,41 @@ export default function App() {
   return (
     <>
       <header className="site-header">
-        <h1>Sri Lanka Anti-Corruption Case Tracker</h1>
-        <div className="subtitle">
-          Court hearings from CIABOC cause lists, parsed and searchable
+        <div className="masthead">
+          <Emblem />
+          <div className="masthead-text">
+            <h1>Sri Lanka Anti-Corruption Case Tracker</h1>
+            <div className="subtitle">
+              Court hearings from CIABOC cause lists, parsed and searchable
+            </div>
+            <div className="source-note">
+              SOURCE: Commission to Investigate Allegations of Bribery or Corruption, Colombo 07
+            </div>
+          </div>
         </div>
-        <div className="source-note">
-          SOURCE: Commission to Investigate Allegations of Bribery or Corruption, Colombo 07
-        </div>
+        {meta && (
+          <div className="masthead-meta">
+            <span><b>{fmt(meta.total_hearings)}</b> hearings</span>
+            <span className="dot">·</span>
+            <span><b>{fmt(meta.unique_cases)}</b> cases</span>
+            <span className="dot">·</span>
+            <span>Data through <b>{formatDate(meta.date_range.to_date)}</b></span>
+          </div>
+        )}
       </header>
 
       <nav className="tabs" aria-label="Sections">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            className={tab === t.id ? 'active' : ''}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
+        <div className="tabs-inner">
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              className={tab === t.id ? 'active' : ''}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </nav>
 
       <main className="page">
@@ -56,6 +78,21 @@ export default function App() {
         {tab === 'suspects' && <SuspectSearch />}
       </main>
     </>
+  )
+}
+
+/* ---------- masthead marks ---------- */
+
+function Emblem() {
+  // Scales of justice — neutral civic mark, not a state seal.
+  return (
+    <svg className="emblem" viewBox="0 0 32 32" aria-hidden="true">
+      <g fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M16 6v20M9 26h14M6 11h20" />
+        <path d="M6 11l-2.5 5h5zM26 11l-2.5 5h5z" />
+      </g>
+      <circle cx="16" cy="6" r="1.7" fill="currentColor" />
+    </svg>
   )
 }
 
@@ -78,4 +115,9 @@ export function formatDate(iso) {
 export function weekday(iso) {
   const d = new Date(iso + 'T00:00:00')
   return d.toLocaleDateString('en-GB', { weekday: 'short' }).toUpperCase()
+}
+
+// Thousands-separated integer formatting for headline figures.
+export function fmt(n) {
+  return typeof n === 'number' ? n.toLocaleString('en-GB') : n
 }

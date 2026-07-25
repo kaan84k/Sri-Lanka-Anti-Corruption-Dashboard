@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="Sri Lanka Anti-Corruption Dashboard">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#470b1f"/>
+      <stop offset="0.55" stop-color="#5c0f28"/>
+      <stop offset="1" stop-color="#3a0917"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.85" cy="0.1" r="0.9">
+      <stop offset="0" stop-color="#c89b2c" stop-opacity="0.22"/>
+      <stop offset="0.6" stop-color="#c89b2c" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#e6c667"/>
+      <stop offset="0.5" stop-color="#c89b2c"/>
+      <stop offset="1" stop-color="#9c7414"/>
+    </linearGradient>
+    <pattern id="grid" width="34" height="34" patternUnits="userSpaceOnUse">
+      <path d="M34 0H0V34" fill="none" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+    </pattern>
+  </defs>
+
+  <rect width="1200" height="320" fill="url(#bg)"/>
+  <rect width="1200" height="320" fill="url(#grid)"/>
+  <rect width="1200" height="320" fill="url(#glow)"/>
+  <rect x="0" y="316" width="1200" height="4" fill="url(#gold)"/>
+
+  <!-- scales of justice emblem -->
+  <g transform="translate(96 160)" stroke="url(#gold)" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M0 -70 V70 M-34 70 H34 M-52 -34 H52"/>
+    <path d="M-52 -34 l-18 40 h36 Z" fill="#c89b2c" fill-opacity="0.12"/>
+    <path d="M52 -34 l-18 40 h36 Z" fill="#c89b2c" fill-opacity="0.12"/>
+    <circle cx="0" cy="-70" r="6" fill="#c89b2c" stroke="none"/>
+  </g>
+
+  <!-- wordmark -->
+  <text x="188" y="140" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="52" font-weight="800" fill="#ffffff" letter-spacing="-1">Sri Lanka Anti-Corruption</text>
+  <text x="188" y="200" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="52" font-weight="800" fill="#e6c667" letter-spacing="-1">Case Tracker</text>
+  <text x="192" y="242" font-family="'IBM Plex Mono','Consolas',monospace" font-size="17" fill="#d8b48f" letter-spacing="1">CIABOC court cause lists · parsed · searchable · open data</text>
+
+  <!-- mini pipeline motif -->
+  <g transform="translate(192 268)" font-family="'IBM Plex Mono','Consolas',monospace" font-size="13" fill="#c9a98e">
+    <rect x="0" y="0" width="72" height="24" rx="6" fill="#ffffff" fill-opacity="0.06" stroke="#c89b2c" stroke-opacity="0.4"/>
+    <text x="36" y="16" text-anchor="middle" fill="#e6c667">PDF</text>
+    <text x="86" y="16">→</text>
+    <rect x="104" y="0" width="86" height="24" rx="6" fill="#ffffff" fill-opacity="0.06" stroke="#c89b2c" stroke-opacity="0.4"/>
+    <text x="147" y="16" text-anchor="middle" fill="#e6c667">Gemini</text>
+    <text x="200" y="16">→</text>
+    <rect x="218" y="0" width="86" height="24" rx="6" fill="#ffffff" fill-opacity="0.06" stroke="#c89b2c" stroke-opacity="0.4"/>
+    <text x="261" y="16" text-anchor="middle" fill="#e6c667">SQLite</text>
+    <text x="314" y="16">→</text>
+    <rect x="332" y="0" width="118" height="24" rx="6" fill="#ffffff" fill-opacity="0.06" stroke="#c89b2c" stroke-opacity="0.4"/>
+    <text x="391" y="16" text-anchor="middle" fill="#e6c667">Dashboard</text>
+  </g>
+</svg>
