@@ -1,24 +1,112 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 168" width="1200" height="168" role="img" aria-label="Contributions welcome">
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 1200 168"
+     width="1200"
+     height="168"
+     role="img"
+     aria-labelledby="title description">
+
+  <title id="title">Contributions Welcome</title>
+  <desc id="description">
+    Help make Sri Lankan anti-corruption data open, accurate, and accessible.
+  </desc>
+
   <defs>
     <linearGradient id="cbg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1e5c4f"/>
-      <stop offset="1" stop-color="#123a31"/>
+      <stop offset="0%" stop-color="#1e5c4f"/>
+      <stop offset="100%" stop-color="#123a31"/>
     </linearGradient>
+
     <linearGradient id="cgold" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0" stop-color="#e6c667"/>
-      <stop offset="1" stop-color="#c89b2c"/>
+      <stop offset="0%" stop-color="#e6c667"/>
+      <stop offset="100%" stop-color="#c89b2c"/>
     </linearGradient>
+
+    <filter id="buttonShadow" x="-20%" y="-30%" width="140%" height="170%">
+      <feDropShadow
+        dx="0"
+        dy="4"
+        stdDeviation="4"
+        flood-color="#081f1a"
+        flood-opacity="0.28"/>
+    </filter>
   </defs>
 
-  <rect x="1" y="1" width="1198" height="166" rx="16" fill="url(#cbg)"/>
-  <rect x="1" y="1" width="6" height="166" rx="3" fill="url(#cgold)"/>
+  <!-- Background -->
+  <rect
+    x="1"
+    y="1"
+    width="1198"
+    height="166"
+    rx="16"
+    fill="url(#cbg)"
+    stroke="#2d7566"
+    stroke-width="1"/>
 
-  <text x="44" y="60" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="32" font-weight="800" fill="#ffffff" letter-spacing="-0.3">Contributions Welcome</text>
-  <text x="46" y="96" font-family="'IBM Plex Sans','Segoe UI',Arial,sans-serif" font-size="17" fill="#c3e0d7">Help make Sri Lankan anti-corruption data open, accurate, and accessible.</text>
-  <text x="46" y="126" font-family="'IBM Plex Mono','Consolas',monospace" font-size="13" fill="#8fbfb2" letter-spacing="0.4">Good first issues  ·  Python  ·  React  ·  Data quality  ·  Documentation  ·  Design</text>
+  <!-- Accent line -->
+  <rect
+    x="1"
+    y="1"
+    width="7"
+    height="166"
+    rx="3.5"
+    fill="url(#cgold)"/>
 
-  <g transform="translate(928 58)">
-    <rect width="228" height="52" rx="10" fill="url(#cgold)"/>
-    <text x="114" y="33" text-anchor="middle" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="16" font-weight="800" fill="#123a31" letter-spacing="0.4">READ CONTRIBUTING GUIDE</text>
+  <!-- Main content -->
+  <text
+    x="44"
+    y="58"
+    font-family="Archivo, 'Segoe UI', Arial, sans-serif"
+    font-size="32"
+    font-weight="800"
+    fill="#ffffff"
+    letter-spacing="-0.3">
+    Contributions Welcome
+  </text>
+
+  <text
+    x="46"
+    y="94"
+    font-family="'IBM Plex Sans', 'Segoe UI', Arial, sans-serif"
+    font-size="17"
+    font-weight="400"
+    fill="#c3e0d7">
+    Help make Sri Lankan anti-corruption data open, accurate, and accessible.
+  </text>
+
+  <text
+    x="46"
+    y="126"
+    font-family="'IBM Plex Mono', Consolas, monospace"
+    font-size="13"
+    font-weight="500"
+    fill="#8fbfb2"
+    letter-spacing="0.3">
+    Good first issues  ·  Python  ·  React  ·  Data quality  ·  Documentation  ·  Design
+  </text>
+
+  <!-- CTA button -->
+  <g transform="translate(892 58)" filter="url(#buttonShadow)">
+    <rect
+      x="0"
+      y="0"
+      width="264"
+      height="52"
+      rx="10"
+      fill="url(#cgold)"
+      stroke="#f0d77d"
+      stroke-width="1"/>
+
+    <text
+      x="132"
+      y="32"
+      text-anchor="middle"
+      dominant-baseline="middle"
+      font-family="Archivo, 'Segoe UI', Arial, sans-serif"
+      font-size="14"
+      font-weight="800"
+      fill="#123a31"
+      letter-spacing="0.25">
+      READ CONTRIBUTING GUIDE
+    </text>
   </g>
 </svg>
