@@ -21,10 +21,15 @@ import hashlib
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from google import genai
 from google.genai import types
 from google.genai import errors as genai_errors
+
+try:
+    from .identity_resolution import initialize_identity_schema, resolve_person_id
+except ImportError:
+    from identity_resolution import initialize_identity_schema, resolve_person_id
 
 # Paths resolve relative to the project root (parent of pipeline/), so the
 # script works no matter which directory you run it from.
@@ -34,9 +39,12 @@ DATA_PROCESSED = os.path.join(PROJECT_ROOT, "data", "processed")
 REVIEW_DIR = os.path.join(DATA_PROCESSED, "review")
 DB_PATH = os.path.join(DATA_PROCESSED, "ciaboc.db")
 
-MODEL = "gemini-2.5-flash"  # primary model
-# Tried in order if the previous one is overloaded (503) or rate-limited (429):
-FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.0-flash"]
+FALLBACK_MODELS = [
+    "gemini-3.5-flash-lite",  # optimized for high-volume document extraction
+    "gemini-3.6-flash",
+    "gemini-3.5-flash",
+]
+MODEL = FALLBACK_MODELS[0]
 MAX_RETRIES_PER_MODEL = 4   # with exponential backoff: waits 5s, 10s, 20s, 40s
 
 
@@ -91,8 +99,26 @@ class Case(BaseModel):
         return v
 
 
+class ExtractedSuspect(BaseModel):
+    """Permissive Gemini output; strict validation happens after extraction."""
+
+    name: Optional[str]
+    designation: Optional[str]
+    institution: Optional[str]
+
+
+class ExtractedCase(BaseModel):
+    """Raw case shape that preserves incomplete rows for manual review."""
+
+    hearing_date: Optional[str]
+    file_nos: Optional[list[str]]
+    case_no: Optional[str]
+    court_level: Optional[str]
+    suspects: Optional[list[ExtractedSuspect]]
+
+
 class ExtractionResult(BaseModel):
-    cases: list[Case]
+    cases: list[ExtractedCase]
 
 
 # ---------------------------------------------------------------------------
@@ -139,7 +165,6 @@ def extract_with_gemini(pdf_path: str, api_key: str) -> ExtractionResult:
     config = types.GenerateContentConfig(
         response_mime_type="application/json",
         response_schema=ExtractionResult,   # Gemini enforces this schema
-        temperature=0.0,                    # deterministic: we want facts, not creativity
     )
 
     last_error = None
@@ -157,6 +182,12 @@ def extract_with_gemini(pdf_path: str, api_key: str) -> ExtractionResult:
 
             except genai_errors.APIError as e:
                 last_error = e
+                # A retired/unavailable model should immediately fall through
+                # to the next model instead of aborting the whole pipeline.
+                if e.code == 404:
+                    print(f"      {model} unavailable (404), trying next model ...")
+                    break
+
                 # 503 = overloaded, 429 = rate limited -> both are temporary
                 if e.code in (503, 429):
                     if attempt < MAX_RETRIES_PER_MODEL:
@@ -183,7 +214,22 @@ def validate_cases(result: ExtractionResult, pdf_name: str) -> tuple[list[Case],
     good, rejected = [], []
     seen = set()
 
-    for case in result.cases:
+    for extracted_case in result.cases:
+        raw_case = extracted_case.model_dump()
+        try:
+            case = Case.model_validate(raw_case)
+        except ValidationError as exc:
+            problems = [
+                f"{'.'.join(map(str, error['loc']))}: {error['msg']}"
+                for error in exc.errors()
+            ]
+            rejected.append({
+                "case": raw_case,
+                "problems": problems,
+                "source_pdf": pdf_name,
+            })
+            continue
+
         problems = []
 
         # duplicate check (same case can legitimately appear on different dates)
@@ -255,6 +301,7 @@ def save_to_sqlite(cases: list[Case], pdf_name: str, db_path: str = DB_PATH) -> 
     """Insert cases. Re-running on the same PDF won't create duplicates."""
     conn = sqlite3.connect(db_path)
     conn.executescript(SCHEMA)
+    initialize_identity_schema(conn)
     inserted = skipped = 0
     now = datetime.now().isoformat(timespec="seconds")
 
@@ -275,9 +322,21 @@ def save_to_sqlite(cases: list[Case], pdf_name: str, db_path: str = DB_PATH) -> 
                 "INSERT OR IGNORE INTO file_numbers (case_id, file_no) VALUES (?, ?)",
                 [(case_id, f) for f in case.file_nos],
             )
+            suspect_rows = [
+                (
+                    case_id,
+                    s.name,
+                    s.designation,
+                    s.institution,
+                    resolve_person_id(conn, s.name),
+                )
+                for s in case.suspects
+            ]
             conn.executemany(
-                "INSERT INTO suspects (case_id, name, designation, institution) VALUES (?, ?, ?, ?)",
-                [(case_id, s.name, s.designation, s.institution) for s in case.suspects],
+                """INSERT INTO suspects
+                       (case_id, name, designation, institution, person_id)
+                   VALUES (?, ?, ?, ?, ?)""",
+                suspect_rows,
             )
         conn.commit()
     finally:

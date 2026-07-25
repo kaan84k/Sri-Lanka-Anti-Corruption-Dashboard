@@ -37,3 +37,17 @@ py -3 pipeline/ciaboc_pipeline.py data/raw/20260112_-_20260116.pdf
 
 Validated rows are saved in `data/processed/ciaboc.db`. Rejected rows are written
 to `data/processed/review/` for manual checking.
+
+## Resolving suspect identities
+
+The pipeline preserves each name exactly as extracted from its source PDF and
+links it to a canonical person record. Safe punctuation and spacing variants
+are grouped automatically; abbreviation and spelling variants are merged only
+through reviewed aliases in `pipeline/identity_resolution.py`.
+
+The identity migration runs automatically whenever a PDF is processed. To
+migrate or refresh an existing database without calling Gemini:
+
+```powershell
+py -3 pipeline/identity_resolution.py
+```
