@@ -28,3 +28,4 @@ data/processed/review/*.json
 .idea/
 .DS_Store
 Thumbs.db
+*.bak

@@ -1,21 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 160" width="1200" height="160" role="img" aria-label="Contributions welcome">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 168" width="1200" height="168" role="img" aria-label="Contributions welcome">
   <defs>
-    <linearGradient id="cbg" x1="0" y1="0" x2="1" y2="0">
+    <linearGradient id="cbg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0" stop-color="#1e5c4f"/>
-      <stop offset="1" stop-color="#154238"/>
+      <stop offset="1" stop-color="#123a31"/>
     </linearGradient>
     <linearGradient id="cgold" x1="0" y1="0" x2="1" y2="0">
       <stop offset="0" stop-color="#e6c667"/>
       <stop offset="1" stop-color="#c89b2c"/>
     </linearGradient>
   </defs>
-  <rect width="1200" height="160" rx="16" fill="url(#cbg)"/>
-  <rect x="0" y="0" width="6" height="160" fill="url(#cgold)"/>
-  <text x="48" y="66" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="34" font-weight="800" fill="#ffffff">Contributions welcome 🤝</text>
-  <text x="48" y="104" font-family="'IBM Plex Sans','Segoe UI',Arial,sans-serif" font-size="18" fill="#bfe0d6">Help make Sri Lankan anti-corruption data open, accurate, and accessible.</text>
-  <text x="48" y="132" font-family="'IBM Plex Mono','Consolas',monospace" font-size="14" fill="#8fbfb2">good first issues · Python · React · data quality · docs · design</text>
-  <g transform="translate(980 54)" font-family="'Archivo',Arial,sans-serif">
-    <rect width="176" height="52" rx="10" fill="url(#cgold)"/>
-    <text x="88" y="33" text-anchor="middle" font-size="19" font-weight="800" fill="#173d20">Read CONTRIBUTING →</text>
+
+  <rect x="1" y="1" width="1198" height="166" rx="16" fill="url(#cbg)"/>
+  <rect x="1" y="1" width="6" height="166" rx="3" fill="url(#cgold)"/>
+
+  <text x="44" y="60" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="32" font-weight="800" fill="#ffffff" letter-spacing="-0.3">Contributions Welcome</text>
+  <text x="46" y="96" font-family="'IBM Plex Sans','Segoe UI',Arial,sans-serif" font-size="17" fill="#c3e0d7">Help make Sri Lankan anti-corruption data open, accurate, and accessible.</text>
+  <text x="46" y="126" font-family="'IBM Plex Mono','Consolas',monospace" font-size="13" fill="#8fbfb2" letter-spacing="0.4">Good first issues  ·  Python  ·  React  ·  Data quality  ·  Documentation  ·  Design</text>
+
+  <g transform="translate(928 58)">
+    <rect width="228" height="52" rx="10" fill="url(#cgold)"/>
+    <text x="114" y="33" text-anchor="middle" font-family="'Archivo','Segoe UI',Arial,sans-serif" font-size="16" font-weight="800" fill="#123a31" letter-spacing="0.4">READ CONTRIBUTING GUIDE</text>
   </g>
 </svg>

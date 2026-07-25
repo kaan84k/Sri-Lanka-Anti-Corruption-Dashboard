@@ -31,7 +31,8 @@ You can run the **API and dashboard without a Gemini key** using the existing da
 - **Data quality** — clearing the `data/processed/review/` queue, verifying court levels and aliases.
 - **Docs, design, CI** — always appreciated.
 
-Look for issues labeled **`good first issue`** to start.
+Look for issues labeled **`good first issue`** to start. See the
+[Contributing section of the README](README.md#contributing) for the full list of focus areas.
 
 ## Ground rules
 - Keep PRs small and focused — easier to review, faster to merge.
@@ -43,4 +44,4 @@ Look for issues labeled **`good first issue`** to start.
 Open a GitHub issue with steps to reproduce, the PDF/date involved (if data-related), and expected vs
 actual behavior. Data-accuracy reports are especially valuable — cite the source cause list.
 
-Thank you for helping keep Sri Lankan anti-corruption data open and accurate. 🙏
+Thank you for helping keep Sri Lankan anti-corruption data open and accurate.
