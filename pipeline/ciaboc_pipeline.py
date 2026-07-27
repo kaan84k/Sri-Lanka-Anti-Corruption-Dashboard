@@ -18,7 +18,7 @@ import json
 import time
 import sqlite3
 import hashlib
-from datetime import datetime
+from datetime import date, datetime, timedelta
 from typing import Optional
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -307,6 +307,62 @@ def apply_court_levels(result: "ExtractionResult", pdf_path: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# 2c. Hearing-date repair against the week the PDF covers
+# ---------------------------------------------------------------------------
+# Cause-list filenames encode the week: 20260126_-_20260130.pdf = 26-30 Jan 2026.
+# Gemini sometimes drifts the year along with the day when reading a column of
+# dates (26/01/2026, 27/01/2026 ... came back as 2026-01-26, 2027-01-27,
+# 2028-01-28 ...). The filename window is ground truth, so a date whose day and
+# month land inside the window but whose year does not is corrected to the
+# window's year; anything else is left alone for validation to reject.
+
+_PDF_WEEK_RE = re.compile(r"(\d{8})\D+(\d{8})")
+
+
+def pdf_date_window(pdf_name: str) -> Optional[tuple[date, date]]:
+    """First and last hearing date the PDF covers, taken from its filename."""
+    m = _PDF_WEEK_RE.search(pdf_name)
+    if not m:
+        return None
+    try:
+        start = datetime.strptime(m.group(1), "%Y%m%d").date()
+        end = datetime.strptime(m.group(2), "%Y%m%d").date()
+    except ValueError:
+        return None
+    if end < start or (end - start).days > 31:
+        return None
+    return start, end
+
+
+def _window_days(window: tuple[date, date]) -> list[date]:
+    start, end = window
+    return [start + timedelta(days=i) for i in range((end - start).days + 1)]
+
+
+def repair_hearing_dates(result: ExtractionResult, pdf_name: str) -> int:
+    """Fix wrong-year hearing dates using the PDF filename's week. Returns count fixed."""
+    window = pdf_date_window(pdf_name)
+    if window is None:
+        return 0
+    by_day_month = {(d.month, d.day): d for d in _window_days(window)}
+    fixed = 0
+    for case in result.cases:
+        if not case.hearing_date:
+            continue
+        try:
+            parsed = datetime.strptime(case.hearing_date, "%Y-%m-%d").date()
+        except ValueError:
+            continue
+        if window[0] <= parsed <= window[1]:
+            continue
+        corrected = by_day_month.get((parsed.month, parsed.day))
+        if corrected is not None:
+            case.hearing_date = corrected.isoformat()
+            fixed += 1
+    return fixed
+
+
+# ---------------------------------------------------------------------------
 # 3. Post-extraction validation (things Pydantic alone can't check)
 # ---------------------------------------------------------------------------
 
@@ -317,6 +373,7 @@ def validate_cases(result: ExtractionResult, pdf_name: str) -> tuple[list[Case],
     rejected rows go to a review file so a human can fix them."""
     good, rejected = [], []
     seen = set()
+    window = pdf_date_window(pdf_name)
 
     for extracted_case in result.cases:
         raw_case = extracted_case.model_dump()
@@ -346,6 +403,17 @@ def validate_cases(result: ExtractionResult, pdf_name: str) -> tuple[list[Case],
         year = int(case.hearing_date[:4])
         if not (2000 <= year <= 2035):
             problems.append(f"implausible hearing year {year}")
+
+        # sanity: the date must fall inside the week the PDF covers. Catches
+        # model drift (e.g. 27/01/2026 read back as 2027-01-27) that the plain
+        # year range above is far too loose to notice.
+        if window is not None:
+            hearing = datetime.strptime(case.hearing_date, "%Y-%m-%d").date()
+            if not (window[0] <= hearing <= window[1]):
+                problems.append(
+                    f"hearing date {case.hearing_date} outside PDF week "
+                    f"{window[0].isoformat()}..{window[1].isoformat()}"
+                )
 
         # sanity: at least one file number should look like a real CIABOC file no.
         if not any(FILE_NO_PATTERN.match(f) for f in case.file_nos):
@@ -470,6 +538,10 @@ def run(pdf_path: str):
     print("[1b] Resolving court levels from PDF geometry ...")
     changed = apply_court_levels(result, pdf_path)
     print(f"      Corrected court_level on {changed} case(s) via asterisk position")
+
+    print("[1c] Checking hearing dates against the PDF's week ...")
+    fixed = repair_hearing_dates(result, pdf_name)
+    print(f"      Corrected wrong-year hearing date on {fixed} case(s)")
 
     print("[2/4] Validating ...")
     good, rejected = validate_cases(result, pdf_name)

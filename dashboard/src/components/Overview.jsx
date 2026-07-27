@@ -231,10 +231,8 @@ export default function Overview({ onSelectDate, onDrill }) {
                 <Pie
                   data={courts} dataKey="cases" nameKey="court_level"
                   innerRadius={58} outerRadius={92} paddingAngle={2}
-                  label={({ court_level, cases }) =>
-                    `${court_level} ${pct(cases, totalCourtCases)}`}
+                  label={SliceLabel}
                   labelLine={false}
-                  style={{ fontSize: 11, fill: 'var(--ink)' }}
                   isAnimationActive={false}
                   cursor="pointer"
                   onClick={(d) =>
@@ -310,6 +308,26 @@ export default function Overview({ onSelectDate, onDrill }) {
 }
 
 const pct = (v, total) => (total ? `${Math.round((v / total) * 100)}%` : '0%')
+
+/* Direct label for a pie slice, drawn just outside the ring.
+   This has to be its own <text> element: a `style` prop on <Pie> would be
+   copied onto every sector path, and an inline fill there overrides the
+   per-<Cell> fill attribute — which paints the whole chart one flat color.
+   Slices under 5% are left to the legend so labels do not collide. */
+const LABEL_RAD = Math.PI / 180
+function SliceLabel({ cx, cy, midAngle, outerRadius, percent, payload }) {
+  if (percent < 0.05) return null
+  const x = cx + (outerRadius + 14) * Math.cos(-midAngle * LABEL_RAD)
+  const y = cy + (outerRadius + 14) * Math.sin(-midAngle * LABEL_RAD)
+  return (
+    <text
+      x={x} y={y} textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central"
+      style={{ fontSize: 11, fill: 'var(--ink)' }}
+    >
+      {`${payload.court_level} ${Math.round(percent * 100)}%`}
+    </text>
+  )
+}
 const totalTimeline = (t) => t.reduce((a, d) => a + d.hearings, 0)
 
 function StatCard({ num, label }) {
