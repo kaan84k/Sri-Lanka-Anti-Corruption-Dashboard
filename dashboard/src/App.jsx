@@ -102,8 +102,11 @@ export function CourtBadge({ level }) {
   const cls =
     level === 'HC' ? 'court-HC' :
     level === 'MC' ? 'court-MC' :
-    level === 'CA/SC' ? 'court-CASC' : 'court-UNK'
-  return <span className={`court-badge ${cls}`}>{level || 'N/A'}</span>
+    level === 'CA/SC' ? 'court-CASC' :
+    level === 'N/A' ? 'court-NA' : 'court-UNK'
+  // A null court_level is 'Unknown' (never located), which the API's pie data
+  // already labels that way — it is not the same thing as a literal 'N/A' row.
+  return <span className={`court-badge ${cls}`}>{level || 'Unknown'}</span>
 }
 
 export function formatDate(iso) {

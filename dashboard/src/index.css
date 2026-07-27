@@ -22,7 +22,8 @@
   --court-HC: #6e1230;
   --court-MC: #1e5c4f;
   --court-CASC: #c96a1f;
-  --court-UNK: #8a847c;
+  --court-NA: #6b5ea8;   /* court column blank in the source list */
+  --court-UNK: #8a847c;  /* court column never located */
   --chart-series: #6e1230;
   --chart-series-soft: rgba(110, 18, 48, 0.14);
   --chart-grid: #ece9e1;
@@ -61,7 +62,8 @@
   --court-HC: #d16a82;
   --court-MC: #4fa08d;
   --court-CASC: #e0904a;
-  --court-UNK: #9a938c;
+  --court-NA: #9b8fd6;
+  --court-UNK: #c4bcb2;  /* lightened: the old #9a938c sat on top of MC green */
   --chart-series: #d16a82;
   --chart-series-soft: rgba(209, 106, 130, 0.16);
   --chart-grid: #2f2a24;
@@ -231,10 +233,11 @@ body {
   letter-spacing: 0.02em;
   color: #fff; border-radius: var(--radius-xs); padding: 2px 9px; display: inline-block;
 }
-.court-HC { background: var(--crimson); }
-.court-MC { background: var(--green); }
-.court-CASC { background: var(--orange); }
-.court-UNK { background: var(--ink-soft); }
+.court-HC { background: var(--court-HC); }
+.court-MC { background: var(--court-MC); }
+.court-CASC { background: var(--court-CASC); }
+.court-NA { background: var(--court-NA); }
+.court-UNK { background: var(--court-UNK); }
 
 /* ---------- tables ---------- */
 table { width: 100%; border-collapse: collapse; }

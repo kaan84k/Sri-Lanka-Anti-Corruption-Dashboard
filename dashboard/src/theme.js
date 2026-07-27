@@ -8,10 +8,13 @@
 // Categorical hues, keyed by court level. These are brand-locked
 // identity colors (same as the badges); always paired with a legend
 // and direct labels as secondary encoding.
+// 'N/A' (court column blank in the cause list) and 'Unknown' (column never
+// located) are separate values in the data and must not share a hue.
 export const COURT_COLORS = {
   HC: 'var(--court-HC)',
   MC: 'var(--court-MC)',
   'CA/SC': 'var(--court-CASC)',
+  'N/A': 'var(--court-NA)',
   Unknown: 'var(--court-UNK)',
 }
 
