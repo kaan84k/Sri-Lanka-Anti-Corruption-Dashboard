@@ -366,7 +366,10 @@ def repair_hearing_dates(result: ExtractionResult, pdf_name: str) -> int:
 # 3. Post-extraction validation (things Pydantic alone can't check)
 # ---------------------------------------------------------------------------
 
-FILE_NO_PATTERN = re.compile(r"^(R|BC|AC)\s*/?\s*\d+", re.IGNORECASE)
+# Real file numbers look like R/50/2011 or BC/1104/2011, but some carry a
+# one-letter sub-code between the prefix and the number: BC/C/1133/2016,
+# BC/O/1203/2016. Without the optional group those rows were rejected outright.
+FILE_NO_PATTERN = re.compile(r"^(R|BC|AC)\s*/?\s*(?:[A-Z]\s*/?\s*)?\d+", re.IGNORECASE)
 
 def validate_cases(result: ExtractionResult, pdf_name: str) -> tuple[list[Case], list[dict]]:
     """Separate good cases from rejected ones. Never silently drop data —
