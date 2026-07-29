@@ -14,6 +14,7 @@ the component you plan to work on:
 - **Pipeline** — Python 3.11+, `pip install google-genai pydantic pdfplumber`, a `GEMINI_API_KEY`.
 - **API** — Python 3.11+, `pip install fastapi uvicorn`.
 - **Dashboard** — Node 18+, `cd dashboard && npm install`.
+- **Tests** — `pip install pytest`, then `py -3 -m pytest` from the repository root. No API key needed.
 
 You can run the **API and dashboard without a Gemini key** using the existing database.
 
@@ -21,7 +22,8 @@ You can run the **API and dashboard without a Gemini key** using the existing da
 1. Fork the repository.
 2. Create a branch: `git checkout -b feat/short-description` (or `fix/…`, `docs/…`).
 3. Make focused commits with clear messages.
-4. Run/verify the affected component (`npm run build` for the dashboard; start the API and hit `/docs`).
+4. Run/verify the affected component (`py -3 -m pytest` for the pipeline; `npm run build` for the
+   dashboard; start the API and hit `/docs`).
 5. Open a Pull Request explaining **what** changed and **why**. Add screenshots for UI changes.
 
 ## What we're looking for

@@ -132,6 +132,15 @@ npm run dev
 ```
 Opens on **http://localhost:5173** and proxies `/api` to the FastAPI backend.
 
+### 5. Run the tests
+```powershell
+pip install pytest
+py -3 -m pytest
+```
+Covers the pipeline's validation rules: file-number recognition, the good/rejected
+split in `validate_cases()`, and hearing-date repair against the PDF week. No API
+key, database, or PDF is required — the tests run on in-memory fixtures.
+
 ## Contributing
 
 <p align="center">
@@ -173,7 +182,7 @@ See **[CONTRIBUTING.md](CONTRIBUTING.md)** for the full guide.
 - [ ] Full-text search across suspects and institutions
 - [ ] Sinhala and Tamil UI translations
 - [ ] Public hosted deployment
-- [ ] Test suite and CI
+- [ ] CI (pipeline validation tests exist; nothing runs them automatically yet)
 
 ## Disclaimer
 Data is derived from **public** CIABOC court cause lists. Automated extraction can contain errors;

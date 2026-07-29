@@ -21,6 +21,8 @@ dist/
 
 # Pipeline-generated data
 data/processed/*.db
+# local DB snapshots: .bak, .predatefix, .pre-regexfix
+data/processed/*.db.*
 data/processed/review/*.json
 
 # Editor and operating-system files
